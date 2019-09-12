@@ -3,7 +3,7 @@ import settings
 
 
 class CNN(object):
-    def __init__(self, image_height, image_width, max_captcha, char_set, model_save_dir, w_alpha, b_alpha):
+    def __init__(self, image_height, image_width, max_captcha, char_set,  w_alpha, b_alpha):
         # 初始值
         self.image_height = image_height
         self.image_width = image_width
@@ -13,7 +13,7 @@ class CNN(object):
         self.model_save_dir = model_save_dir  # 模型路径
         with tf.name_scope('parameters'):
             self.w_alpha = w_alpha
-            self.b_alpha = w_alpha
+            self.b_alpha = b_alpha
         # tf初始化占位符
         with tf.name_scope('data'):
             self.X = tf.placeholder(tf.float32, [None, self.image_height * self.image_width])  # 特征向量
@@ -69,11 +69,3 @@ class CNN(object):
 
         return y_predict
 
-def main():
-    image_height = settings.image_height
-    image_width = settings.image_width
-    max_captcha = settings.max_captcha
-    char_set = settings.char_set
-    char_set_len = settings.char_set_len
-    w_alpha = settings.w_alpha
-    b_alpha = settings.b_alpha
