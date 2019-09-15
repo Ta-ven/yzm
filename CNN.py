@@ -3,17 +3,16 @@ import settings
 
 
 class CNN(object):
-    def __init__(self, image_height, image_width, max_captcha, char_set,  w_alpha, b_alpha):
+    def __init__(self):
         # 初始值
-        self.image_height = image_height
-        self.image_width = image_width
-        self.max_captcha = max_captcha
-        self.char_set = char_set
-        self.char_set_len = len(char_set)
-        self.model_save_dir = model_save_dir  # 模型路径
+        self.image_height = settings.image_height
+        self.image_width = settings.image_width
+        self.max_captcha = settings.max_captcha
+        self.char_set = settings.char_set
+        self.char_set_len = len(settings.char_set)
         with tf.name_scope('parameters'):
-            self.w_alpha = w_alpha
-            self.b_alpha = b_alpha
+            self.w_alpha = settings.w_alpha
+            self.b_alpha = settings.b_alpha
         # tf初始化占位符
         with tf.name_scope('data'):
             self.X = tf.placeholder(tf.float32, [None, self.image_height * self.image_width])  # 特征向量

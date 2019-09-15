@@ -1,8 +1,10 @@
 import os
-import tensorflow as tf
+import time
 import pandas as pd
 import settings
 import numpy as np
+from PIL import Image
+import random
 
 
 class Reader:
@@ -15,6 +17,13 @@ class Reader:
         self.max_captcha = settings.max_captcha
         self.char_set = settings.char_set
         self.char_set_len = len(settings.char_set)
+        if settings.FLAG == "1":
+            self.csv_data = self.parse_csv()
+            self.confirm_image_suffix()
+            self.train_images_list = os.listdir(self.img_path)
+            # 打乱图片
+            random.seed(time.time())
+            random.shuffle(self.train_images_list)
 
     def confirm_image_suffix(self):
         # 在训练前校验所有文件格式
@@ -24,26 +33,17 @@ class Reader:
                 raise Exception("%s图片格式不一致" % img_name)
         print("所有图片格式校验通过")
 
-    def read_img(self):
+    def read_img(self, img_path, img_name):
         """
         读取图片数据
         :return:
         """
-        # 1.构造文件名队列
-        #     获取文件名列表
-        file_queue = tf.train.string_input_producer(self.file_names_ls)
-        # 2.读取与解码
-        reader = tf.WholeFileReader()
-        filename, image = reader.read(file_queue)
-        # 解码
-        decoded = tf.image.decode_jpeg(image)
-        # 更新形状，确定形状方便批处理
-        decoded.set_shape([""])
-        image_cast = tf.cast(decoded, tf.float32)
-        # 3.批处理
-        filename_batch, image_batch = tf.train.batch([filename, image_cast], batch_size=100, num_threads=1,
-                                                     capacity=200)
-        return filename_batch, image_batch
+        img_file = os.path.join(img_path, img_name)
+        captcha_image = Image.open(img_file)
+        captcha_array = np.array(captcha_image)  # 向量化
+        num = int(img_name.split(".")[0])
+        label = self.csv_data.loc[num, "labels"]
+        return label, captcha_array
 
     def parse_csv(self):
         """
@@ -62,20 +62,19 @@ class Reader:
 
             elif settings.model == 4:
                 csv_data = pd.read_csv(self.ture_captcha_path, names=["file_num", "value"], index_col="file_num")
-                vector = np.zeros(self.max_captcha * self.char_set_len)
                 ls = []
                 for label in csv_data["value"]:
+                    li = []
                     if "=" in label:
                         label = label.strip("=")
                     for operator in ["+", "-", "×", "÷"]:
                         if operator in label:
                             a, b = label.split(operator)
-                            ls = [a, operator, b]
-                            break
-                    for i, ch in enumerate(ls):
-                        idx = i * self.char_set_len + self.char_set.index(ch)
-                        vector[idx] = 1
-                csv_data["labels"] = vector
+                            for j, ch in enumerate([a, operator, b]):
+                                idx = j * self.char_set_len + self.char_set.index(ch)
+                                li.append(idx)
+                    ls.append(li)
+                csv_data["labels"] = ls
 
             else:
                 raise Exception("模式暂时不支持！")
@@ -87,16 +86,59 @@ class Reader:
             raise Exception("文件格式错误！")
         return None
 
-    def filename2label(self, filename, csv_data):
+    def convert2gray(self, img):
         """
-        特征值和目标值一一对应
-        :param filename:
-        :param csv_data:
+        图片转为灰度图，如果是3通道图则计算，单通道图则直接返回
+        :param img:
         :return:
         """
-        labels = []
-        for file_name in filename:
-            file_num = "".join(list(filter(str.isdigit, str(file_name))))
-            target = csv_data.loc[int(file_num), "labels"]
-            labels.append(target)
-        return np.array(labels)
+        if len(img.shape) > 2:
+            r, g, b = img[:, :, 0], img[:, :, 1], img[:, :, 2]
+            gray = 0.2989 * r + 0.5870 * g + 0.1140 * b
+            return gray
+        else:
+            return img
+
+    def one_hot(self, label):
+        vector = np.zeros(self.max_captcha * self.char_set_len)
+        for i in label:
+            vector[int(i)] = 1
+        return vector
+
+    def get_batch(self, n, size=128):
+        batch_x = np.zeros([size, settings.image_height * settings.image_width])  # 初始化
+        batch_y = np.zeros([size, self.max_captcha * self.char_set_len])  # 初始化
+
+        max_batch = int(len(self.train_images_list) / size)
+        if max_batch - 1 < 0:
+            raise Exception("训练集图片数量需要大于每批次训练的图片数量")
+        if n > max_batch - 1:
+            n = n % max_batch
+        s = n * size
+        e = (n + 1) * size
+        this_batch = self.train_images_list[s:e]
+
+        for i, img_name in enumerate(this_batch):
+            label, image_array = self.read_img(self.img_path, img_name)
+            image_array = self.convert2gray(image_array)  # 灰度化图片
+            batch_x[i, :] = image_array.flatten() / 255  # flatten 转为一维
+            batch_y[i, :] = self.one_hot(label)  # 生成 oneHot
+        return batch_x, batch_y
+
+    def test_get_batch(self, img_path, img_name):
+        batch_x = np.zeros([1, settings.image_height * settings.image_width])  # 初始化
+        # batch_y = np.zeros([1, self.max_captcha * self.char_set_len])  # 初始化
+        image_array = self.test_read_img(img_path, img_name)
+        image_array = self.convert2gray(image_array)  # 灰度化图片
+        batch_x[0, :] = image_array.flatten() / 255  # flatten 转为一维
+        return batch_x
+
+    def test_read_img(self, img_path, img_name):
+        """
+        读取图片数据
+        :return:
+        """
+        img_file = os.path.join(img_path, img_name)
+        captcha_image = Image.open(img_file)
+        captcha_array = np.array(captcha_image)  # 向量化
+        return captcha_array
