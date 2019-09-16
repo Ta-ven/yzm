@@ -59,7 +59,7 @@ class Reader:
                     for i, ch in enumerate(label):
                         idx = i * self.char_set_len + self.char_set.index(ch)
                         li.append(idx)
-                    ls.append(ls)
+                    ls.append(li)
                 csv_data["labels"] = ls
 
             elif settings.model == 4:

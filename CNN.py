@@ -53,18 +53,17 @@ class CNN(object):
         # 全连接层1
         wd1 = tf.get_variable(name='wd1', shape=[next_shape, 1024], dtype=tf.float32,
                               initializer=tf.contrib.layers.xavier_initializer())
-        bd1 = tf.Variable(0.01 * tf.random_normal([1024]))
+        bd1 = tf.Variable(self.b_alpha * tf.random_normal([1024]))
         dense = tf.reshape(conv3, [-1, wd1.get_shape().as_list()[0]])
         dense = tf.nn.relu(tf.add(tf.matmul(dense, wd1), bd1))
-        dense = tf.nn.dropout(dense, 0.75)
+        dense = tf.nn.dropout(dense, self.keep_prob)
 
         # 全连接层2
-        wout = tf.get_variable('name', shape=[1024, 3 * 104], dtype=tf.float32,
+        wout = tf.get_variable('name', shape=[1024, self.max_captcha * self.char_set_len], dtype=tf.float32,
                                initializer=tf.contrib.layers.xavier_initializer())
-        bout = tf.Variable(tf.random_normal([3 * 104]))
+        bout = tf.Variable(self.b_alpha * tf.random_normal([self.max_captcha * self.char_set_len]))
 
         with tf.name_scope('y_prediction'):
             y_predict = tf.add(tf.matmul(dense, wout), bout)
 
         return y_predict
-

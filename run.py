@@ -11,4 +11,4 @@ if value == '1':
 
 elif value == '0':
     w = Working()
-    w.runner(r"C:\Users\Administrator\Desktop\a", "229.jpg")
+    w.runner(r"C:\Users\Administrator\Desktop\img\a", "72.png")
