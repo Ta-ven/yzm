@@ -53,12 +53,14 @@ class Reader:
         if '.csv' in self.ture_captcha_path:
             if settings.model != 4:
                 csv_data = pd.read_csv(self.ture_captcha_path, names=["file_num", "value"], index_col="file_num")
-                vector = np.zeros(self.max_captcha * self.char_set_len)
+                ls = list()
                 for label in csv_data["value"]:
+                    li = list()
                     for i, ch in enumerate(label):
                         idx = i * self.char_set_len + self.char_set.index(ch)
-                        vector[idx] = 1
-                csv_data["labels"] = vector
+                        li.append(idx)
+                    ls.append(ls)
+                csv_data["labels"] = ls
 
             elif settings.model == 4:
                 csv_data = pd.read_csv(self.ture_captcha_path, names=["file_num", "value"], index_col="file_num")

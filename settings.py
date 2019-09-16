@@ -1,8 +1,8 @@
-FLAG = "1"  # 1是训练0是验证
+FLAG = "0"  # 1是训练0是验证
 
 # 图片基本信息
 img_path = r'C:\Users\Administrator\Desktop\yzm\image'
-ture_captcha_path = r'C:\Users\Administrator\Desktop\yzm\text.csv'
+ture_captcha_path = r'E:\tf\yanzhengma\yzm\text1.csv'
 image_height = 32
 image_width = 90
 image_suffix = 'jpg'
@@ -19,7 +19,7 @@ w_alpha = 0.01
 b_alpha = 0.1
 
 # 保存路径
-model_save_dir = './model/model'
+model_save_dir = r'E:\model\size\model\model'
 
 # 训练次数
 cycle_stop = 1000

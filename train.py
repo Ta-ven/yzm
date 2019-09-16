@@ -62,12 +62,12 @@ class Train(CNN):
                 sess.run(init)
                 saver.restore(sess, self.model_save_dir)
                 predict = tf.argmax(tf.reshape(y_predict, [-1, self.max_captcha, self.char_set_len]), 2)
-                images = self.reader.test_get_batch(r"C:\Users\Administrator\Desktop\yzm\a", "66.jpg")
+                images = self.reader.test_get_batch(r"C:\Users\Administrator\Desktop\aa", "206.jpg")
                 y_pre = sess.run(predict, feed_dict={self.X: images, self.keep_prob: 1.})
                 y_p = ''
-                for i in y_pre:
-                    y_p += self.char_set.index(int(i))
-                print("预测值为%s"% y_p)
+                for i in y_pre[0].tolist():
+                    y_p += self.char_set[int(i)]
+                print("预测值为%s" % y_p)
 
 
 if __name__ == '__main__':
